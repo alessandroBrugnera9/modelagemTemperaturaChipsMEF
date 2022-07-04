@@ -62,7 +62,7 @@ def integrateGauss(n: int, a: float64, b: float64, fixedVariable: float64, mathe
     :param int n: number of coefficients for Gauss Quadrature
     :param float64 a: lower limit from the integral
     :param float64 b: upper limit from the integral
-    :param float64 fixedVariable: fixed variable when integrating, when calculating double integral iteratively
+    :param float64 fixedVariable: fixed variable when integrating, when calculating double integral iteratively. 1 when simple integral
     :param function mathematicalFunction: mathematical function to be integrated, the 1st arg is the fixed, 2nd is the node
     """
     nodes, weights = getCoefficients(n)
@@ -275,4 +275,5 @@ def main():
     print(example42(10))
     
 createCoefficientsArray()
-main()
+if __name__=='__main__':
+    main()

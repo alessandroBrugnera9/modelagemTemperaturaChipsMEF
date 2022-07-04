@@ -23,14 +23,14 @@ def buildDVector(gridVector, n, h, fx):
             gridVector[i-1],
             gridVector[i],
             1,
-            lambda y, x: (x-gridVector[i-1])/h
+            lambda y, x: fx(x)*(x-gridVector[i-1])/h
         )
         element += integrateGauss(
             10,
             gridVector[i],
             gridVector[i+1],
             1,
-            lambda y, x: (gridVector[i+1]-x)/h
+            lambda y, x: fx(x)*(gridVector[i+1]-x)/h
         )
         dVector[i-1] = element
 

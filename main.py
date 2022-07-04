@@ -15,29 +15,26 @@ def buildDMatix(gridVector, n, h, fx):
     generate the result vector of the system of equations
 
     """
-    dVector = np.zeros(n+1, dtype=np.float64)
-    # executando 2 loops para calcular os parametros
-    # primeiro loop, calcula-se a primeira parte integral, em todos os elementos menos o primeiro
-    for i in range(1, n+1):
-        dVector[i] += integrateGauss(
+    dVector = np.zeros(n)
+    for i in range(1, n):
+        element = np.float64(0)
+        element += integrateGauss(
             10,
             gridVector[i-1],
             gridVector[i],
             1,
             lambda y, x: (x-gridVector[i-1])/h
         )
-    # segundo loop, calcula-se a segunda parte integral, em todos os elementos menos o ultimo
-    for i in range(0, n):
-        dVector[i] += integrateGauss(
+        element += integrateGauss(
             10,
             gridVector[i],
             gridVector[i+1],
             1,
             lambda y, x: (gridVector[i+1]-x)/h
         )
+        dVector[i-1] = element
 
     return dVector
-
 
 def main():
     n = 7

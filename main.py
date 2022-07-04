@@ -7,16 +7,16 @@ L = 20E-3
 
 
 def buildGridVector(n):
-    return (np.linspace(0, L, num=(n+1)))
+    return (np.linspace(0, L, num=(n+2)))
 
 
-def buildDMatix(gridVector, n, h, fx):
+def buildDVector(gridVector, n, h, fx):
     """
     generate the result vector of the system of equations
 
     """
     dVector = np.zeros(n)
-    for i in range(1, n):
+    for i in range(1, n+1):
         element = np.float64(0)
         element += integrateGauss(
             10,
@@ -36,13 +36,18 @@ def buildDMatix(gridVector, n, h, fx):
 
     return dVector
 
+
+def buildABCMatix():
+    return
+
 def main():
     n = 7
     h = 1/(n+1)
     gridVector = buildGridVector(n)
     def fx(x): return 12*x*(1-x)-2
 
-    matrixD = buildDMatix(gridVector, n, h, fx)
+    dVector = buildDVector(gridVector, n, h, fx)
+    aVector, bVector, cVector = buildABCMatix(gridVector, n, h, fx)
 
 
 main()

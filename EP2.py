@@ -91,7 +91,7 @@ def doubleIntegral(n: int, a: float64, b: float64,  c: Callable[[float64], float
     calculate double integral iteratively using gauss quadratire, using n elments
     from a to b of the external integral, and c to d of the internal integral (these lmits can be dependent on the external variable(node))
 
-    :param int n: number of coefficients for Gauss Quadrature
+    :param int n: number of coefficients for Gauss Quadrature: 6,8 or 10
     :param float64 a: lower limit from the external integral 
     :param float64 b: upper limit from the external ntegral
     :param function c: upper limit from the internal integral, should be callable even when constant

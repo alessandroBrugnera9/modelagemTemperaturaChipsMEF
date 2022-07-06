@@ -160,10 +160,10 @@ def part1():
         temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
 
         quadraticError, maxError = calculateErrors(
-            gridVector, temperatureVector, fx)
+            gridVector, temperatureVector, lambda x: ((1-x)**2)*(x**2))
 
-        print("Erro Quadrático Médio para n={}, é: {:.3f}".format(n, quadraticError))
-        print("Máximo Erro para n={}, é: {:.3f}".format(n, maxError))
+        print("Erro Quadrático Médio para n={}, é: {:.3E}".format(n, quadraticError))
+        print("Máximo Erro para n={}, é: {:.3E}".format(n, maxError))
 
         plt.ion()
         plt.plot(gridVector, temperatureVector)

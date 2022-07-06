@@ -29,7 +29,7 @@ def calculeTemperature(gridVector, alphaVector, n, h):
     return temperatureGrid
 
 
-def ritzMethod(xVec, n, h, px, fx, qx):
+def ritzMethod(xVec, n, h, kx, fx, qx):
     # pre alocando vetores da matriz tridiagoanal e de resultado (d)
     a = np.zeros(n)
     b = np.zeros(n)
@@ -66,7 +66,7 @@ def ritzMethod(xVec, n, h, px, fx, qx):
             xVec[i-1],
             xVec[i],
             1,
-            lambda y, x: px(x)
+            lambda y, x: kx(x)
         )
         )
         Q5 = (1/h)*(integrateGauss(
@@ -114,7 +114,7 @@ def ritzMethod(xVec, n, h, px, fx, qx):
         xVec[i-1],
         xVec[i],
         1,
-        lambda y, x: px(x)
+        lambda y, x: kx(x)
     )
     )
 
@@ -143,13 +143,15 @@ def part1():
         h = L/(n+1)
         gridVector = buildGridVector(n, L)
         def fx(x): return 12*x*(1-x)-2
-
+        
         # montando matrizes de elementos infinitos
         # usando algoritmo de ritz como proposto no livro de Burden / Faires,
         # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
         # implementado no EP1
+        # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
+        # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
         aVector, bVector, cVector, dVector = ritzMethod(
-            gridVector, n, h, lambda x: 1, fx, lambda x: 1)
+            xVec=gridVector, n=n, h=h, kx=lambda x: 1, fx=fx, qx=lambda x: 0)
 
         # resolvendo sistema linear para calcular a contribuicao de cada noh
         alphaVector = systemSolver(aVector, bVector, cVector, dVector)
@@ -179,8 +181,10 @@ def part2():
         # usando algoritmo de ritz como proposto no livro de Burden / Faires,
         # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
         # implementado no EP1
+        # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
+        # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
         aVector, bVector, cVector, dVector = ritzMethod(
-            xVec=gridVector, n=n, h=h, px=lambda x: 3.6, fx=fx, qx=lambda x: 1)
+            xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 1)
 
         # resolvendo sistema linear para calcular a contribuicao de cada noh
         alphaVector = systemSolver(aVector, bVector, cVector, dVector)

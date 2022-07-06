@@ -5,17 +5,17 @@ import numpy as np
 
 from matplotlib import pyplot as plt
 
-L = 1
 
-
-def buildGridVector(n):
+def buildGridVector(n, L):
     return (np.linspace(0, L, num=(n+2)))
+
 
 def systemSolver(aVector, bVector, cVector, dVector):
     LVector, UVector = LUDecomposition(aVector, bVector, cVector)
     xVector = solveLUSystem(LVector, UVector, cVector, dVector)
 
     return xVector
+
 
 def calculeTemperature(gridVector, alphaVector, n, h):
     # Criando array com tamanho n+1 com as temperaturas
@@ -36,8 +36,7 @@ def ritzMethod(xVec, n, h, px, fx, qx):
     c = np.zeros(n)
     d = np.zeros(n)
 
-
-    for i in range(1,n+1):
+    for i in range(1, n+1):
         Q1 = ((1/h)**2)*(integrateGauss(
             10,
             xVec[i],
@@ -121,29 +120,53 @@ def ritzMethod(xVec, n, h, px, fx, qx):
 
     b[i-2] += Q4
 
-    return(a,b,c,d)
+    return(a, b, c, d)
+
+
+def calculateQuadraticError(gridVector, temperatureVector, fx):
+    errorArr = np.zeros_like(temperatureVector)
+
+    for i in range(len(gridVector)):
+        errorArr[i] = (fx(gridVector[i])-temperatureVector[i])**2
+
+    error = np.sqrt(errorArr.sum()/len(errorArr))
+
+    return error
+
+
+def part1():
+    L = 1
+    for n in [7, 15, 31, 63, 127, 511]:
+        h = L/(n+1)
+        gridVector = buildGridVector(n, L)
+        def fx(x): return 12*x*(1-x)-2
+
+        # montando matrizes de elementos infinitos
+        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
+        # implementado no EP1
+        aVector, bVector, cVector, dVector = ritzMethod(
+            gridVector, n, h, lambda x: 1, fx, lambda x: 1)
+
+        # resolvendo sistema linear para calcular a contribuicao de cada noh
+        alphaVector = systemSolver(aVector, bVector, cVector, dVector)
+
+        # calculando o vetor final
+        temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
+
+        quadraticError = calculateQuadraticError(
+            gridVector, temperatureVector, fx)
+
+        print("Erro Quadrático para n={}, é: {:.3f}".format(n, quadraticError))
+
 
 def main():
-    n = 7
-    h = 1/(n+1)
-    gridVector = buildGridVector(n)
-    def fx(x): return 12*x*(1-x)-2
+    part1()
 
-    # montando matrizes de elementos infinitos
-        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
-        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss
-        # implementado no EP1
-    aVector, bVector, cVector,dVector =ritzMethod(gridVector, n, h, lambda x: 1, fx, lambda x: 1)
-
-    # resolvendo sistema linear para calcular a contribuicao de cada noh
-    alphaVector = systemSolver(aVector, bVector, cVector, dVector)
-
-    # calculando o vetor final
-    temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
-
-    # plotando a temperatura ao longo do eixo
-    plt.plot(gridVector, temperatureVector)
-    plt.show()
+    # # plotando a temperatura ao longo do eixo
+    # plt.plot(gridVector, temperatureVector)
+    # plt.show()
+    # print(1)
 
 
 main()

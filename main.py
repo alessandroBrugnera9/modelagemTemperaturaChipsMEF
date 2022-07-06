@@ -11,110 +11,14 @@ L = 1
 def buildGridVector(n):
     return (np.linspace(0, L, num=(n+2)))
 
-
-def buildDVector(gridVector, n, h, fx):
-    """
-    generate the result vector of the system of equations
-
-    """
-    dVector = np.zeros(n)
-    for i in range(1, n+1):
-        element = np.float64(0)
-        element += integrateGauss(
-            10,
-            gridVector[i-1],
-            gridVector[i],
-            1,
-            lambda y, x: fx(x)*(x-gridVector[i-1])/h
-        )
-        element += integrateGauss(
-            10,
-            gridVector[i],
-            gridVector[i+1],
-            1,
-            lambda y, x: fx(x)*(gridVector[i+1]-x)/h
-        )
-        dVector[i-1] = element
-
-    return dVector
-
-
-def buildABCMatix(gridVector, n, h):
-    aVector = np.zeros(n)
-    bVector = np.zeros(n)
-    cVector = np.zeros(n)
-
-    # iterando sobre os nós
-    for i in range(1, n):
-        centerPoint = gridVector[i]
-        previousPoint = gridVector[i-1]
-        nextPoint = gridVector[i+1]
-
-        # calculando o vetor b (diagonal principal)
-        bVector[i-1] += integrateGauss(
-            10,
-            centerPoint,
-            nextPoint,
-            1,
-            lambda y, x: (nextPoint-x)/h*(nextPoint-x)/h
-        )
-        bVector[i-1] += integrateGauss(
-            10,
-            previousPoint,
-            centerPoint,
-            1,
-            lambda y, x: (x-previousPoint)/h*(x-previousPoint)/h
-        )
-
-        # calculando o produto interno entre o nó e o proximo, o vetor a e c é simehtrico
-        symetricParameter = integrateGauss(
-            10,
-            centerPoint,
-            nextPoint,
-            1,
-            lambda y, x: (x-gridVector[i])/h * (gridVector[i+1]-x)/h
-        )
-
-        aVector[i] = symetricParameter
-        cVector[i-1] = symetricParameter
-
-    # calculando o ultimo elmento de b  (phi_n *phi_n)
-    i = n+1
-    centerPoint = gridVector[i]
-    previousPoint = gridVector[i-1]
-    # nextPoint = gridVector[i+1]
-
-    # bVector[i-1] += integrateGauss(
-    #     10,
-    #     centerPoint,
-    #     nextPoint,
-    #     1,
-    #     lambda y, x: (nextPoint-x)/h*(nextPoint-x)/h
-    # )
-    # bVector[i-1] += integrateGauss(
-    #     10,
-    #     previousPoint,
-    #     centerPoint,
-    #     1,
-    #     lambda y, x: (x-previousPoint)/h*(x-previousPoint)/h
-    # )
-
-    return (aVector, bVector, cVector)
-
-
 def systemSolver(aVector, bVector, cVector, dVector):
     LVector, UVector = LUDecomposition(aVector, bVector, cVector)
     xVector = solveLUSystem(LVector, UVector, cVector, dVector)
 
     return xVector
 
-
 def calculeTemperature(gridVector, alphaVector, n, h):
-    # Criando array com um ponto extra entrecada noh para mostrar temperatura
-    # temperatureGrid = np.zeros(2*n-1)
-
-    # for i in range(1,n+1):
-    #     print()
+    # Criando array com tamanho n+1 com as temperaturas
 
     temperatureGrid = np.zeros(n+2)
 
@@ -125,7 +29,7 @@ def calculeTemperature(gridVector, alphaVector, n, h):
     return temperatureGrid
 
 
-def bookMethod(xVec, n, h, px, fx, qx):
+def ritzMethod(xVec, n, h, px, fx, qx):
     # pre alocando vetores da matriz tridiagoanal e de resultado (d)
     a = np.zeros(n)
     b = np.zeros(n)
@@ -184,14 +88,14 @@ def bookMethod(xVec, n, h, px, fx, qx):
         )
 
         # printing elements of the approximation for analysis
-        print(
-        "{0:.2f}".format(Q1),
-        "{0:.2f}".format(Q2),
-        "{0:.2f}".format(Q3),
-        "{0:.2f}".format(Q4),
-        "{0:.2f}".format(Q5),
-        "{0:.2f}".format(Q6),
-        )
+        # print(
+        # "{0:.2f}".format(Q1),
+        # "{0:.2f}".format(Q2),
+        # "{0:.2f}".format(Q3),
+        # "{0:.2f}".format(Q4),
+        # "{0:.2f}".format(Q5),
+        # "{0:.2f}".format(Q6),
+        # )
 
         b[i-1] += Q2 + Q3 + Q4
         if(i != 1):
@@ -204,7 +108,7 @@ def bookMethod(xVec, n, h, px, fx, qx):
 
         d[i-1] = Q5+Q6
 
-    # para i=n
+    # para i=n+1, para o ultimo elmento da diagonal prinicpal
     i = n+1
     Q4 = ((1/h)**2)*(integrateGauss(
         10,
@@ -225,19 +129,19 @@ def main():
     gridVector = buildGridVector(n)
     def fx(x): return 12*x*(1-x)-2
 
-    aVector, bVector, cVector,dVector =bookMethod(gridVector, n, h, lambda x: 1, fx, lambda x: 1)
-    print(1)
-    # # montando matriz de elementos infinitos
-    # dVector = buildDVector(gridVector, n, h, fx)
-    # aVector, bVector, cVector = buildABCMatix(gridVector, n, h)
+    # montando matrizes de elementos infinitos
+        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss
+        # implementado no EP1
+    aVector, bVector, cVector,dVector =ritzMethod(gridVector, n, h, lambda x: 1, fx, lambda x: 1)
 
-    aMatrix = buildTridiagonalMatrix(aVector, bVector, cVector)
-
-    # resolvendo sistema
+    # resolvendo sistema linear para calcular a contribuicao de cada noh
     alphaVector = systemSolver(aVector, bVector, cVector, dVector)
 
+    # calculando o vetor final
     temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
 
+    # plotando a temperatura ao longo do eixo
     plt.plot(gridVector, temperatureVector)
     plt.show()
 

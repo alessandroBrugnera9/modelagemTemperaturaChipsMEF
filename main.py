@@ -1,5 +1,5 @@
 import imp
-from EP1 import LUDecomposition, solveLUSystem
+from EP1 import LUDecomposition, buildTridiagonalMatrix, solveLUSystem
 from EP2 import integrateGauss
 import numpy as np
 
@@ -119,20 +119,115 @@ def calculeTemperature(gridVector, alphaVector, n, h):
     temperatureGrid = np.zeros(n+2)
 
     for i in range(1, n+1):
-        temperatureGrid[i] = alphaVector[i-1]*((gridVector[i]-gridVector[i-1])/h)
+        temperatureGrid[i] = alphaVector[i-1] * \
+            ((gridVector[i]-gridVector[i-1])/h)
 
     return temperatureGrid
 
 
+def bookMethod(xVec, n, h, px, fx, qx):
+    a = np.zeros(n)
+    b = np.zeros(n)
+    c = np.zeros(n)
+    d = np.zeros(n)
+    for i in range(n):
+        Q1 = ((1/h)**2)*(integrateGauss(
+            10,
+            xVec[i],
+            xVec[i+1],
+            1,
+            lambda y, x: (xVec[i+1]-x)*(x-xVec[i])*qx(x)
+        )
+        )
+        Q2 = ((1/h)**2)*(integrateGauss(
+            10,
+            xVec[i-1],
+            xVec[i],
+            1,
+            lambda y, x: ((x-xVec[i-1])**2)*qx(x)
+        )
+        )
+        Q3 = ((1/h)**2)*(integrateGauss(
+            10,
+            xVec[i],
+            xVec[i+1],
+            1,
+            lambda y, x: ((xVec[i+1]-x)**2)*qx(x)
+        )
+        )
+        Q4 = ((1/h)**2)*(integrateGauss(
+            10,
+            xVec[i-1],
+            xVec[i],
+            1,
+            lambda y, x: px(x)
+        )
+        )
+        Q5 = (1/h)*(integrateGauss(
+            10,
+            xVec[i-1],
+            xVec[i],
+            1,
+            lambda y, x: (x-xVec[i-1])*fx(x)
+        )
+        )
+        Q6 = (1/h)*(integrateGauss(
+            10,
+            xVec[i],
+            xVec[i+1],
+            1,
+            lambda y, x: (xVec[i+1]-x)*fx(x)
+        )
+        )
+
+        print(
+        "{0:.2f}".format(Q1),
+        "{0:.2f}".format(Q2),
+        "{0:.2f}".format(Q3),
+        "{0:.2f}".format(Q4),
+        "{0:.2f}".format(Q5),
+        "{0:.2f}".format(Q6),
+        )
+
+        b[i-1] += Q2 + Q3 + Q4
+        if(i != 1):
+            b[i-2] += Q4
+            c[i-2] += -Q4
+            a[i-1] += -Q4
+        c[i-1] += Q1
+        if(i != n):
+            a[i] += Q1
+
+        d[i-1] = Q5+Q6
+
+    # para i=n
+    i = n+1
+    Q4 = ((1/h)**2)*(integrateGauss(
+        10,
+        xVec[i-1],
+        xVec[i],
+        1,
+        lambda y, x: px(x)
+    )
+    )
+
+    b[i-2] += Q4
+
+    return(a,b,c,d)
+
 def main():
-    n = 7
+    n = 63
     h = 1/(n+1)
     gridVector = buildGridVector(n)
     def fx(x): return 12*x*(1-x)-2
 
-    # montando matriz de elementos infinitos
-    dVector = buildDVector(gridVector, n, h, fx)
-    aVector, bVector, cVector = buildABCMatix(gridVector, n, h)
+    aVector, bVector, cVector,dVector =bookMethod(gridVector, n, h, lambda x: 1, fx, lambda x: 1)
+    print(1)
+    # # montando matriz de elementos infinitos
+    # dVector = buildDVector(gridVector, n, h, fx)
+    # aVector, bVector, cVector = buildABCMatix(gridVector, n, h)
+
+    aMatrix = buildTridiagonalMatrix(aVector, bVector, cVector)
 
     # resolvendo sistema
     alphaVector = systemSolver(aVector, bVector, cVector, dVector)

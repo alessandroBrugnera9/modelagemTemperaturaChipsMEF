@@ -123,15 +123,18 @@ def ritzMethod(xVec, n, h, px, fx, qx):
     return(a, b, c, d)
 
 
-def calculateQuadraticError(gridVector, temperatureVector, fx):
+def calculateErrors(gridVector, temperatureVector, fx):
     errorArr = np.zeros_like(temperatureVector)
+    maxError = np.float64(0)
 
     for i in range(len(gridVector)):
         errorArr[i] = (fx(gridVector[i])-temperatureVector[i])**2
+        if (np.abs(fx(gridVector[i])-temperatureVector[i])>maxError):
+            maxError = np.abs(fx(gridVector[i])-temperatureVector[i])
 
-    error = np.sqrt(errorArr.sum()/len(errorArr))
+    quadraticError = np.sqrt(errorArr.sum()/len(errorArr))
 
-    return error
+    return quadraticError, maxError
 
 
 def part1():
@@ -154,10 +157,40 @@ def part1():
         # calculando o vetor final
         temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
 
-        quadraticError = calculateQuadraticError(
+        quadraticError, maxError = calculateErrors(
             gridVector, temperatureVector, fx)
 
-        print("Erro Quadrático para n={}, é: {:.3f}".format(n, quadraticError))
+        print("Erro Quadrático Médio para n={}, é: {:.3f}".format(n, quadraticError))
+        print("Máximo Erro para n={}, é: {:.3f}".format(n, maxError))
+
+        plt.ion()
+        plt.plot(gridVector, temperatureVector)
+        # plt.show()
+        print(1)
+
+def part2():
+    L = 1
+    for n in [7]:
+        h = L/(n+1)
+        gridVector = buildGridVector(n, L)
+        def fx(x): return 12*x*(1-x)-2
+
+        # montando matrizes de elementos infinitos
+        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
+        # implementado no EP1
+        aVector, bVector, cVector, dVector = ritzMethod(
+            xVec=gridVector, n=n, h=h, px=lambda x: 3.6, fx=fx, qx=lambda x: 1)
+
+        # resolvendo sistema linear para calcular a contribuicao de cada noh
+        alphaVector = systemSolver(aVector, bVector, cVector, dVector)
+
+        # calculando o vetor final
+        temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
+
+        plt.plot(gridVector, temperatureVector)
+        plt.show()
+        print(1)
 
 
 def main():

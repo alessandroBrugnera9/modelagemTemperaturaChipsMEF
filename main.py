@@ -129,7 +129,7 @@ def calculateErrors(gridVector, temperatureVector, fx):
 
     for i in range(len(gridVector)):
         errorArr[i] = (fx(gridVector[i])-temperatureVector[i])**2
-        if (np.abs(fx(gridVector[i])-temperatureVector[i])>maxError):
+        if (np.abs(fx(gridVector[i])-temperatureVector[i]) > maxError):
             maxError = np.abs(fx(gridVector[i])-temperatureVector[i])
 
     quadraticError = np.sqrt(errorArr.sum()/len(errorArr))
@@ -143,7 +143,7 @@ def part1():
         h = L/(n+1)
         gridVector = buildGridVector(n, L)
         def fx(x): return 12*x*(1-x)-2
-        
+
         # montando matrizes de elementos infinitos
         # usando algoritmo de ritz como proposto no livro de Burden / Faires,
         # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
@@ -170,12 +170,19 @@ def part1():
         # plt.show()
         print(1)
 
+
 def part2():
     L = 1
-    for n in [7]:
+    for n in [31]:
         h = L/(n+1)
         gridVector = buildGridVector(n, L)
-        def fx(x): return 12*x*(1-x)-2
+
+        # modelando entrada e saida de calor
+        baseHeat = 100
+        sigma = 1
+        def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
+        outHeat = 12
+        def fx(x): return inHeat(x)-outHeat
 
         # montando matrizes de elementos infinitos
         # usando algoritmo de ritz como proposto no livro de Burden / Faires,
@@ -184,7 +191,7 @@ def part2():
         # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
         # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
         aVector, bVector, cVector, dVector = ritzMethod(
-            xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 1)
+            xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 0)
 
         # resolvendo sistema linear para calcular a contribuicao de cada noh
         alphaVector = systemSolver(aVector, bVector, cVector, dVector)
@@ -194,16 +201,53 @@ def part2():
 
         plt.plot(gridVector, temperatureVector)
         plt.show()
-        print(1)
+
+
+def part3():
+    L = 1
+    for n in [31]:
+        h = L/(n+1)
+        gridVector = buildGridVector(n, L)
+
+        # modelando entrada e saida de calor
+        baseHeat = 100
+        sigma = 1
+        def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
+        outHeat = 12
+        def fx(x): return inHeat(x)-outHeat
+
+        # modelando variacao no coecificiente de difusao de calor
+        d = L/3
+
+        def kx(x):
+            ks = 3.6
+            ka = 60
+            if (x>(L/2-d) and x<(L/2+d)):
+                return ks
+            else:
+                return ka
+
+        # montando matrizes de elementos infinitos
+        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
+        # implementado no EP1
+        # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
+        # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
+        aVector, bVector, cVector, dVector = ritzMethod(
+            xVec=gridVector, n=n, h=h, kx=kx, fx=fx, qx=lambda x: 0)
+
+        # resolvendo sistema linear para calcular a contribuicao de cada noh
+        alphaVector = systemSolver(aVector, bVector, cVector, dVector)
+
+        # calculando o vetor final
+        temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
+
+        plt.plot(gridVector, temperatureVector)
+        plt.show()
 
 
 def main():
-    part1()
-
-    # # plotando a temperatura ao longo do eixo
-    # plt.plot(gridVector, temperatureVector)
-    # plt.show()
-    # print(1)
+    part3()
 
 
 main()

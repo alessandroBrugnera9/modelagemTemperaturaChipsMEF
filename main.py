@@ -126,11 +126,14 @@ def calculeTemperature(gridVector, alphaVector, n, h):
 
 
 def bookMethod(xVec, n, h, px, fx, qx):
+    # pre alocando vetores da matriz tridiagoanal e de resultado (d)
     a = np.zeros(n)
     b = np.zeros(n)
     c = np.zeros(n)
     d = np.zeros(n)
-    for i in range(n):
+
+
+    for i in range(1,n+1):
         Q1 = ((1/h)**2)*(integrateGauss(
             10,
             xVec[i],
@@ -180,6 +183,7 @@ def bookMethod(xVec, n, h, px, fx, qx):
         )
         )
 
+        # printing elements of the approximation for analysis
         print(
         "{0:.2f}".format(Q1),
         "{0:.2f}".format(Q2),
@@ -216,7 +220,7 @@ def bookMethod(xVec, n, h, px, fx, qx):
     return(a,b,c,d)
 
 def main():
-    n = 63
+    n = 7
     h = 1/(n+1)
     gridVector = buildGridVector(n)
     def fx(x): return 12*x*(1-x)-2

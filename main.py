@@ -1,3 +1,4 @@
+from cProfile import label
 import imp
 from EP1 import LUDecomposition, buildTridiagonalMatrix, solveLUSystem
 from EP2 import integrateGauss
@@ -138,8 +139,11 @@ def calculateErrors(gridVector, temperatureVector, fx):
 
 
 def part1():
+    # modelo mais simples com tamanho 1, k constante e funcao de calor determinada
+    # avalia-se a variacao de n
+    fig, ax = plt.subplots()
     L = 1
-    for n in [7, 15, 31, 63, 127, 511]:
+    for n in [7, 15, 31, 63, 127]:
         h = L/(n+1)
         gridVector = buildGridVector(n, L)
         def fx(x): return 12*x*(1-x)-2
@@ -165,45 +169,105 @@ def part1():
         print("Erro Quadrático Médio para n={}, é: {:.3E}".format(n, quadraticError))
         print("Máximo Erro para n={}, é: {:.3E}".format(n, maxError))
 
-        plt.ion()
-        plt.plot(gridVector, temperatureVector)
-        # plt.show()
-        print(1)
+        ax.plot(gridVector, temperatureVector,
+                 label="n={}".format(n))
+    ax.set_title("Simulação de Temperatura de Chip, por FEM em função de n")
+    ax.set_xlabel("x [adm]")
+    ax.set_ylabel("T [adm]")
+    ax.legend()
+    plt.show(block=False)
 
 
 def part2():
+    # modelo com k diferente de 1 porem constante, porem a geracao de calor varia como uma gaussiana
     L = 1
-    for n in [31]:
-        h = L/(n+1)
-        gridVector = buildGridVector(n, L)
+    n = 127
+    h = L/(n+1)
+    gridVector = buildGridVector(n, L)
 
-        # modelando entrada e saida de calor
-        baseHeat = 100
-        sigma = 1
-        def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
-        outHeat = 12
-        def fx(x): return inHeat(x)-outHeat
+    fig, ax = plt.subplots()
+    
+    # iterando com diferentes elementos da gaussiana para comparacao
+    baseHeats = [1,10,30]
+    sigmas = [0.1,1,10]
+    for baseHeat in baseHeats:
+        for sigma in sigmas:
+            # modelando entrada e saida de calor
+            def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
+            outHeat = 12
+            def fx(x): return inHeat(x)-outHeat
 
-        # montando matrizes de elementos infinitos
-        # usando algoritmo de ritz como proposto no livro de Burden / Faires,
-        # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
-        # implementado no EP1
-        # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
-        # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
-        aVector, bVector, cVector, dVector = ritzMethod(
-            xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 0)
+            # montando matrizes de elementos infinitos
+            # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+            # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
+            # implementado no EP1
+            # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
+            # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
+            aVector, bVector, cVector, dVector = ritzMethod(
+                xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 0)
 
-        # resolvendo sistema linear para calcular a contribuicao de cada noh
-        alphaVector = systemSolver(aVector, bVector, cVector, dVector)
+            # resolvendo sistema linear para calcular a contribuicao de cada noh
+            alphaVector = systemSolver(aVector, bVector, cVector, dVector)
 
-        # calculando o vetor final
-        temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
-
-        plt.plot(gridVector, temperatureVector)
-        plt.show()
-
+            # calculando o vetor final
+            temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
+            
+            ax.plot(gridVector, temperatureVector,
+                 label="\u03C3={}, Q+={}".format(sigma,baseHeat))
+    ax.set_title("Simulação de Temperatura de Chip, por FEM com calor gerado gaussiano")
+    ax.set_xlabel("x [adm]")
+    ax.set_ylabel("T [adm]")
+    ax.legend()
+    plt.show(block=False)
 
 def part3():
+    # modelo com k diferente de 1 porem constante, porem a geracao de calor varia como uma gaussiana
+    # o resfriamento tambem varia
+    L = 1
+    n = 127
+    h = L/(n+1)
+    gridVector = buildGridVector(n, L)
+
+    fig, ax = plt.subplots()
+    
+    # iterando com diferentes elementos da gaussiana para comparacao
+    baseHeats = [1,10,30]
+    baseHeatOut = 1
+    sigmas = [10]
+    theta = 1
+    for baseHeat in baseHeats:
+        for sigma in sigmas:
+            # modelando entrada e saida de calor
+            def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
+            def outHeat(x): return baseHeatOut*(np.exp(-((x)**2)/theta**2) +
+                np.exp(-((x-L)**2)/theta**2))
+            def fx(x): return inHeat(x)-outHeat(x)
+
+            # montando matrizes de elementos infinitos
+            # usando algoritmo de ritz como proposto no livro de Burden / Faires,
+            # calcula-se as integrais utilizando o mehtodo da quadradutra de gauss de 10 pts
+            # implementado no EP1
+            # na modelagem do livro qx pode ser diferente de 0, mas na modelagem proposta
+            # qx sempre serah 0, qx representa um multiplicador de T (sem derivar) na EDO
+            aVector, bVector, cVector, dVector = ritzMethod(
+                xVec=gridVector, n=n, h=h, kx=lambda x: 3.6, fx=fx, qx=lambda x: 0)
+
+            # resolvendo sistema linear para calcular a contribuicao de cada noh
+            alphaVector = systemSolver(aVector, bVector, cVector, dVector)
+
+            # calculando o vetor final
+            temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
+            
+            ax.plot(gridVector, temperatureVector,
+                 label="\u03C3={}, Q+={}".format(sigma,baseHeat))
+    ax.set_title("Simulação de Temperatura de Chip, por FEM com calor gerado e removido gaussiano")
+    ax.set_xlabel("x [adm]")
+    ax.set_ylabel("T [adm]")
+    ax.legend()
+    plt.show(block=False)
+
+
+def part4():
     L = 1
     for n in [31]:
         h = L/(n+1)
@@ -222,7 +286,7 @@ def part3():
         def kx(x):
             ks = 3.6
             ka = 60
-            if (x>(L/2-d) and x<(L/2+d)):
+            if (x > (L/2-d) and x < (L/2+d)):
                 return ks
             else:
                 return ka
@@ -247,7 +311,10 @@ def part3():
 
 
 def main():
+    # part1()
+    # part2()
     part3()
+    part4()
 
 
 main()

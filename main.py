@@ -171,6 +171,12 @@ def part1():
 
         ax.plot(gridVector, temperatureVector,
                  label="n={}".format(n))
+
+    # Plotando resultado exato
+    exactResult = [((1-x)**2)*(x**2) for x in gridVector]
+    ax.plot(gridVector, exactResult,
+                label="Exato")
+
     ax.set_title("Simulação de Temperatura de Chip, por FEM em função de n")
     ax.set_xlabel("x [adm]")
     ax.set_ylabel("T [adm]")
@@ -188,13 +194,13 @@ def part2():
     fig, ax = plt.subplots()
     
     # iterando com diferentes elementos da gaussiana para comparacao
-    baseHeats = [1,10,30]
+    baseHeats = [10]
     sigmas = [0.1,1,10]
     for baseHeat in baseHeats:
         for sigma in sigmas:
             # modelando entrada e saida de calor
             def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
-            outHeat = 12
+            outHeat = 8
             def fx(x): return inHeat(x)-outHeat
 
             # montando matrizes de elementos infinitos
@@ -213,7 +219,7 @@ def part2():
             temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
             
             ax.plot(gridVector, temperatureVector,
-                 label="\u03C3={}, Q+={}".format(sigma,baseHeat))
+                 label="\u03C3={}, Q0+={}".format(sigma,baseHeat))
     ax.set_title("Simulação de Temperatura de Chip, por FEM com calor gerado gaussiano")
     ax.set_xlabel("x [adm]")
     ax.set_ylabel("T [adm]")
@@ -232,9 +238,9 @@ def part3():
     
     # iterando com diferentes elementos da gaussiana para comparacao
     baseHeats = [1,10,30]
-    baseHeatOut = 1
-    sigmas = [10]
-    theta = 1
+    baseHeatOut = 8
+    sigmas = [0.1]
+    theta = 2
     for baseHeat in baseHeats:
         for sigma in sigmas:
             # modelando entrada e saida de calor
@@ -269,19 +275,21 @@ def part3():
 
 def part4():
     L = 1
-    for n in [31]:
+    n=127
+    fig, ax = plt.subplots()
+
+    for d in [L/10, L/3, L/2 ]:
         h = L/(n+1)
         gridVector = buildGridVector(n, L)
 
         # modelando entrada e saida de calor
         baseHeat = 100
-        sigma = 1
+        sigma = 10
         def inHeat(x): return baseHeat*(np.exp(-((x-L/2)**2)/sigma**2))
         outHeat = 12
         def fx(x): return inHeat(x)-outHeat
 
         # modelando variacao no coecificiente de difusao de calor
-        d = L/3
 
         def kx(x):
             ks = 3.6
@@ -306,13 +314,18 @@ def part4():
         # calculando o vetor final
         temperatureVector = calculeTemperature(gridVector, alphaVector, n, h)
 
-        plt.plot(gridVector, temperatureVector)
-        plt.show()
+        ax.plot(gridVector, temperatureVector,
+                label="d={}".format(d))
+        ax.set_title("Simulação de Temperatura de Chip variando o tamanho do chip de sílicio")
+        ax.set_xlabel("x [adm]")
+        ax.set_ylabel("T [adm]")
+        ax.legend()
+        plt.show(block=False)
 
 
 def main():
-    # part1()
-    # part2()
+    part1()
+    part2()
     part3()
     part4()
 
